@@ -141,8 +141,6 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
 
   /**
    * Method to get the post code select list
-   *
-   * @return array
    */
   private function setPostCodesList() {
     $dao = CRM_Core_DAO::executeQuery('SELECT DISTINCT(postal_code) FROM civicrm_address');
@@ -450,7 +448,7 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
   private function addContactNameWhereClause() {
     if (isset($this->_formValues['contact_name']) && !empty($this->_formValues['contact_name'])) {
       $this->_whereIndex++;
-      $this->_whereClauses[] = '(contact_a.display_name LIKE %'.$this->_whereIndex. ')';
+      $this->_whereClauses[] = '(contact_a.sort_name LIKE %'.$this->_whereIndex. ')';
       $this->_whereParams[$this->_whereIndex] = array('%'.$this->_formValues['contact_name'].'%', 'String');
     }
   }

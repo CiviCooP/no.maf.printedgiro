@@ -3,6 +3,24 @@
 require_once 'printedgiro.civix.php';
 
 /**
+ * Implements hook_civicrm_searchTasks
+ *
+ * @author Erik Hommel (CiviCooP)
+ * @date 31 May 2017
+ * @param $objectName
+ * @param $tasks
+ * @link https://docs.civicrm.org/dev/en/master/hooks/hook_civicrm_searchTasks/
+ */
+function printedgiro_civicrm_searchTasks($objectName, &$tasks) {
+  if ($objectName == 'contact') {
+    $tasks[] = array(
+      'title' => 'Export for MAF Printed Giro',
+      'class' => 'CRM_Printedgiro_Export', 'CRM_Export_Form_Map',
+      );
+  }
+}
+
+/**
  * Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config

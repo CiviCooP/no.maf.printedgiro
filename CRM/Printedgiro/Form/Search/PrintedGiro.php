@@ -1,7 +1,34 @@
 <?php
+/*
+ +--------------------------------------------------------------------+
+ | CiviCRM version 4.7                                                |
+ +--------------------------------------------------------------------+
+ | Copyright CiviCRM LLC (c) 2004-2016                                |
+ +--------------------------------------------------------------------+
+ | This file is a part of CiviCRM.                                    |
+ |                                                                    |
+ | CiviCRM is free software; you can copy, modify, and distribute it  |
+ | under the terms of the GNU Affero General Public License           |
+ | Version 3, 19 November 2007 and the CiviCRM Licensing Exception.   |
+ |                                                                    |
+ | CiviCRM is distributed in the hope that it will be useful, but     |
+ | WITHOUT ANY WARRANTY; without even the implied warranty of         |
+ | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               |
+ | See the GNU Affero General Public License for more details.        |
+ |                                                                    |
+ | You should have received a copy of the GNU Affero General Public   |
+ | License and the CiviCRM Licensing Exception along                  |
+ | with this program; if not, contact CiviCRM LLC                     |
+ | at info[AT]civicrm[DOT]org. If you have questions about the        |
+ | GNU Affero General Public License or the licensing of CiviCRM,     |
+ | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
+ +--------------------------------------------------------------------+
+ */
 
 /**
- * A custom contact search
+ *
+ * @package CRM
+ * @copyright CiviCRM LLC (c) 2004-2016
  */
 class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
 
@@ -9,22 +36,42 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
   private $_whereClauses = array();
   private $_whereParams = array();
   private $_whereIndex = 0;
+
   /**
-   * CRM_Printedgiro_Form_Search_PrintedGiro constructor.
+   * Class constructor.
+   *
    * @param array $formValues
    */
-  function __construct(&$formValues) {
+  public function __construct(&$formValues) {
     $this->setPostCodesList();
     parent::__construct($formValues);
+
+    $this->_columns = array(
+      // If possible, don't use aliases for the columns you select.
+      // You can prefix columns with table aliases, if needed.
+      //
+      // If you don't do this, selecting individual records from the
+      // custom search result won't work if your results are sorted on the
+      // aliased colums.
+      // (This is why we map Contact ID on contact_a.id, and not on contact_id).
+      ts('Donor ID') => 'contact_a.id',
+      ts('Donor Name') => 'contact_name',
+      ts('Donor Type') => 'contact_type',
+      ts('Campaign') => 'campaign',
+      ts('Amount') => 'amount',
+      ts('Frequency') => 'frequency',
+      ts('Start Date') => 'start_date',
+      ts('End Date') => 'end_date',
+      ts('Birth Date') => 'birth_date',
+      ts('Gender') => 'gender',
+      ts('Postal Code') => 'postal_code'
+    );
   }
 
   /**
-   * Prepare a set of search fields
-   *
-   * @param CRM_Core_Form $form modifiable
-   * @return void
+   * @param CRM_Core_Form $form
    */
-  function buildForm(&$form) {
+  public function buildForm(&$form) {
     CRM_Utils_System::setTitle(ts('Contacts with Printed Giro'));
 
     $form->add('text', 'contact_name', ts('Donor Name contains'), TRUE);
@@ -69,171 +116,50 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
       'start_date_to',
       'end_date_from',
       'end_date_to',
-      'only_active',));
-  }
+      'only_active',));  }
 
   /**
-   * Method to get the group select list
-   *
    * @return array
    */
-  private function setGroupList() {
-    $result = array('- select -');
-    try {
-      $groups = civicrm_api3('Group', 'get', array(
-        'is_active' => 1,
-        'options' => array('limit' => 0,),
-      ));
-      foreach ($groups['values'] as $group) {
-        $result[$group['id']] = $group['title'];
-      }
-    }
-    catch (CiviCRM_API3_Exception $ex) {
-    }
-    asort($result);
-    return $result;
+  public function summary() {
+    $summary = array();
+    return $summary;
   }
 
   /**
-   * Method to get the tag select list
+   * @param int $offset
+   * @param int $rowcount
+   * @param null $sort
+   * @param bool $returnSQL
    *
-   * @return array
+   * @return string
    */
-  private function setTagList() {
-    $result = array('- select -');
-    try {
-      $tags = civicrm_api3('Tag', 'get', array(
-        'options' => array('limit' => 0,),
-      ));
-      foreach ($tags['values'] as $tag) {
-        if (strpos($tag['used_for'], 'civicrm_contact') !== FALSE) {
-          $result[$tag['id']] = $tag['name'];
-        }
-      }
-    }
-    catch (CiviCRM_API3_Exception $ex) {
-    }
-    asort($result);
-    return $result;
+  public function contactIDs($offset = 0, $rowcount = 0, $sort = NULL, $returnSQL = FALSE) {
+    return $this->all($offset, $rowcount, $sort, FALSE, TRUE);
   }
 
   /**
-   * Method to get the campaign select list
-   *
-   * @return array
-   */
-  private function setCampaignList() {
-    $result = array('- select -');
-    try {
-      $campaigns = civicrm_api3('Campaign', 'get', array(
-        'is_active' => 1,
-        'options' => array('limit' => 0,),
-      ));
-      foreach ($campaigns['values'] as $campaign) {
-        $result[$campaign['id']] = $campaign['title'];
-      }
-    }
-    catch (CiviCRM_API3_Exception $ex) {
-    }
-    asort($result);
-    return $result;
-  }
-
-  /**
-   * Method to get the post code select list
-   */
-  private function setPostCodesList() {
-    $dao = CRM_Core_DAO::executeQuery('SELECT DISTINCT(postal_code) FROM civicrm_address');
-    while ($dao->fetch()) {
-      $this->_postCodesList[] = $dao->postal_code;
-    }
-    asort($this->_postCodesList);
-    return;
-  }
-
-  /**
-   * Method to get the frequency select list
-   *
-   * @return array
-   */
-  private function setFrequencyList() {
-    $result = array('- select -');
-    try {
-      $optionValues = civicrm_api3('OptionValue', 'get', array(
-        'option_group_id' => 'maf_partners_frequency',
-        'is_active' => 1,
-        'options' => array('limit' => 0)
-      ));
-      foreach ($optionValues['values'] as $optionValue) {
-        $result[$optionValue['value']] = $optionValue['label'];
-      }
-    }
-    catch (CiviCRM_API3_Exception $ex) {
-    }
-    asort($result);
-    return $result;
-  }
-
-  /**
-   * Get a list of summary data points
-   *
-   * @return mixed; NULL or array with keys:
-   *  - summary: string
-   *  - total: numeric
-   */
-  function summary() {
-    return NULL;
-    // return array(
-    //   'summary' => 'This is a summary',
-    //   'total' => 50.0,
-    // );
-  }
-
-  /**
-   * Get a list of displayable columns
-   *
-   * @return array, keys are printable column headers and values are SQL column names
-   */
-  function &columns() {
-    // return by reference
-    $columns = array(
-      ts('Donor Name') => 'contact_name',
-      ts('Donor Type') => 'contact_type',
-      ts('Campaign') => 'campaign',
-      ts('Amount') => 'amount',
-      ts('Frequency') => 'frequency',
-      ts('Start Date') => 'start_date',
-      ts('End Date') => 'end_date',
-      ts('Birth Date') => 'birth_date',
-      ts('Gender') => 'gender',
-      ts('Postal Code') => 'postal_code'
-    );
-    return $columns;
-  }
-
-  /**
-   * Construct a full SQL query which returns one page worth of results
-   *
    * @param int $offset
    * @param int $rowcount
    * @param null $sort
    * @param bool $includeContactIDs
    * @param bool $justIDs
-   * @return string, sql
-   */
-  function all($offset = 0, $rowcount = 0, $sort = NULL, $includeContactIDs = FALSE, $justIDs = FALSE) {
-    // delegate to $this->sql(), $this->select(), $this->from(), $this->where(), etc.
-    return $this->sql($this->select(), $offset, $rowcount, $sort, $includeContactIDs, NULL);
-  }
-
-  /**
-   * Construct a SQL SELECT clause
    *
-   * @return string, sql fragment with SELECT arguments
+   * @return string
    */
-  function select() {
-    return "
-      contact_a.id AS contact_id  ,
+  public function all($offset = 0, $rowcount = 0, $sort = NULL, $includeContactIDs = FALSE, $justIDs = FALSE) {
+    if ($justIDs) {
+      $selectClause = "contact_a.id as contact_id";
+      // Don't change sort order when $justIDs is TRUE, see CRM-14920.
+    }
+    else {
+      // We select contact_a.id twice. Once as contact_a.id,
+      // because it is used to fill the prevnext_cache. And once
+      // as contact_a.id, for the patch of CRM-16587 to work when
+      // the results are sorted on contact ID.
+      $selectClause = "
+      contact_a.id AS contact_id ,
+      contact_a.id AS id ,
       contact_a.contact_type,
       contact_a.display_name AS contact_name,
       contact_a.birth_date,
@@ -246,7 +172,12 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
       av.maf_partners_end_date AS end_date,
       av.maf_partners_amount AS amount,
       adr.postal_code
-    ";
+";
+    }
+    return $this->sql($selectClause,
+      $offset, $rowcount, $sort,
+      $includeContactIDs, NULL
+    );
   }
 
   /**
@@ -454,12 +385,112 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
   }
 
   /**
-   * Determine the Smarty template for the search screen
-   *
-   * @return string, template path (findable through Smarty template path)
+   * @return string
    */
-  function templateFile() {
+  public function templateFile() {
     return 'CRM/Contact/Form/Search/Custom.tpl';
+  }
+
+  /**
+   * Method to get the group select list
+   *
+   * @return array
+   */
+  private function setGroupList() {
+    $result = array();
+    try {
+      $groups = civicrm_api3('Group', 'get', array(
+        'is_active' => 1,
+        'options' => array('limit' => 0,),
+      ));
+      foreach ($groups['values'] as $group) {
+        $result[$group['id']] = $group['title'];
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    asort($result);
+    return $result;
+  }
+
+  /**
+   * Method to get the tag select list
+   *
+   * @return array
+   */
+  private function setTagList() {
+    $result = array();
+    try {
+      $tags = civicrm_api3('Tag', 'get', array(
+        'options' => array('limit' => 0,),
+      ));
+      foreach ($tags['values'] as $tag) {
+        if (strpos($tag['used_for'], 'civicrm_contact') !== FALSE) {
+          $result[$tag['id']] = $tag['name'];
+        }
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    asort($result);
+    return $result;
+  }
+
+  /**
+   * Method to get the campaign select list
+   *
+   * @return array
+   */
+  private function setCampaignList() {
+    $result = array();
+    try {
+      $campaigns = civicrm_api3('Campaign', 'get', array(
+        'is_active' => 1,
+        'options' => array('limit' => 0,),
+      ));
+      foreach ($campaigns['values'] as $campaign) {
+        $result[$campaign['id']] = $campaign['title'];
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    asort($result);
+    return $result;
+  }
+
+  /**
+   * Method to get the post code select list
+   */
+  private function setPostCodesList() {
+    $dao = CRM_Core_DAO::executeQuery('SELECT DISTINCT(postal_code) FROM civicrm_address');
+    while ($dao->fetch()) {
+      $this->_postCodesList[] = $dao->postal_code;
+    }
+    asort($this->_postCodesList);
+    return;
+  }
+
+  /**
+   * Method to get the frequency select list
+   *
+   * @return array
+   */
+  private function setFrequencyList() {
+    $result = array();
+    try {
+      $optionValues = civicrm_api3('OptionValue', 'get', array(
+        'option_group_id' => 'maf_partners_frequency',
+        'is_active' => 1,
+        'options' => array('limit' => 0)
+      ));
+      foreach ($optionValues['values'] as $optionValue) {
+        $result[$optionValue['value']] = $optionValue['label'];
+      }
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+    asort($result);
+    return $result;
   }
 
   /**

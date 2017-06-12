@@ -18,6 +18,8 @@ class CRM_Printedgiro_Config {
   private $_endDateCustomColumnName = NULL;
   private $_amountCustomColumnName = NULL;
   private $_frequencyOptionGroupId = NULL;
+  private $_exportPrintedGiroActivityTypeId = NULL;
+  private $_completedActivityStatusId = NULL;
 
   /**
    * CRM_Printedgiro_Config constructor.
@@ -56,11 +58,39 @@ class CRM_Printedgiro_Config {
             break;
         }
       }
+      $this->_exportPrintedGiroActivityTypeId = civicrm_api3('OptionValue', 'getvalue', array(
+        'option_group_id' => 'activity_type',
+        'name' => 'maf_exported_printed_giro',
+        'return' => 'value',
+      ));
+      $this->_completedActivityStatusId = civicrm_api3('OptionValue', 'getvalue', array(
+        'option_group_id' => 'activity_status',
+        'name' => 'Completed',
+        'return' => 'value',
+      ));
     }
     catch (CiviCRM_API3_Exception $ex) {
       throw new Exception('Could not find custom group or custom fields for printed giro. 
         Contact your system administrator, error from API: '.$ex->getMessage());
     }
+  }
+
+  /**
+   * Getter for activity status Completed
+   *
+   * @return null
+   */
+  public function getCompletedActivityStatusId () {
+    return $this->_completedActivityStatusId;
+  }
+
+  /**
+   * Getter for activity type exported for printed giro
+   *
+   * @return null
+   */
+  public function getExportPrintedGiroActivityTypeId () {
+    return $this->_exportPrintedGiroActivityTypeId;
   }
 
   /**

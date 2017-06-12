@@ -12,7 +12,6 @@ class CRM_Printedgiro_Export {
   private $_headers = array();
   private $_rows = array();
   private $_csvFileName = NULL;
-  private $_csvTitle = NULL;
   private $_filters = array();
   private $_query = NULL;
   private $_queryParams = NULL;
@@ -23,8 +22,7 @@ class CRM_Printedgiro_Export {
   function __construct() {
     $this->getFiltersFromRequest();
     $now = new DateTime();
-    $this->_csvFileName = '/printed_giro_'.$now->format('Ymdhis').'.csv';
-    $this->_csvTitle = 'Contacts for Printed Giro MAF Norge';
+    $this->_csvFileName = 'printed_giro_'.$now->format('Ymdhis');
     $this->setPostCodesList();
     $this->processExport();
     $this->_fieldSeparator = ';';
@@ -88,6 +86,7 @@ class CRM_Printedgiro_Export {
       $this->_rows = array();
       $dao = CRM_Core_DAO::executeQuery($this->_query, $this->_queryParams);
       while ($dao->fetch()) {
+        $this->logActivity($dao);
         $this->addRow($dao);
       }
       // write file
@@ -435,6 +434,54 @@ class CRM_Printedgiro_Export {
     return 'cc.id AS contact_id, cc.addressee_display AS addressee, cc.nick_name, adr.street_address, adr.postal_code, 
       adr.city, sp.name AS county, ctr.name AS country, pg.'.$config->getAmountCustomColumnName()
       .' AS amount, "" AS kid, pg.'.$config->getCampaignCustomColumnName().' AS campaign_id';
+  }
+
+  /**
+   * Method to log an activity that the contact was included in a csv export for the printed giro
+
+   * @param object $dao
+   */
+  private function logActivity($dao) {
+    try {
+      $domain = CRM_Core_BAO_Domain::getDomain();
+      $config = CRM_Printedgiro_Config::singleton();
+      $activityParams = array(
+        'activity_type_id' => $config->getExportPrintedGiroActivityTypeId(),
+        'source_contact_id' => $domain->contact_id,
+        'target_id' => $dao->contact_id,
+        'status_id'=> $config->getCompletedActivityStatusId(),
+        'subject' => $this->generateActivitySubject($dao->campaign_id, $dao->amount),
+      );
+      civicrm_api3('Activity', 'create', $activityParams);
+    }
+    catch (CiviCRM_API3_Exception $ex) {
+    }
+  }
+
+  /**
+   * Method to generate subject for activity printed giro export
+   *
+   * @param $campaignId
+   * @param $amount
+   * @return string
+   */
+  private function generateActivitySubject($campaignId, $amount) {
+    $result = 'Exported to Printed Giro CSV';
+    if (!empty($amount)) {
+      $result .= ' for kr '.$amount;
+    }
+    if (!empty($campaignId)) {
+      try {
+        $campaignTitle = civicrm_api3('Campaign', 'getvalue', array(
+          'id' => $campaignId,
+          'return' => 'title',
+        ));
+        $result .= ' in campaign '.$campaignTitle;
+      }
+      catch (CiviCRM_API3_Exception $ex) {
+      }
+    }
+    return $result;
   }
 }
 

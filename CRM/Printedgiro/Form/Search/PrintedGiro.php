@@ -164,13 +164,13 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
       contact_a.display_name AS contact_name,
       contact_a.birth_date,
       ovg.label AS gender,
-      av.maf_partners_campaign AS campaign_id,
+      av.maf_printed_giro_campaign AS campaign_id,
       cp.title AS campaign,
-      av.maf_partners_frequency AS frequency_id,
+      av.maf_printed_giro_frequency AS frequency_id,
       ov.label AS frequency,
-      av.maf_partners_start_date AS start_date,
-      av.maf_partners_end_date AS end_date,
-      av.maf_partners_amount AS amount,
+      av.maf_printed_giro_start_date AS start_date,
+      av.maf_printed_giro_end_date AS end_date,
+      av.maf_printed_giro_amount AS amount,
       adr.postal_code
 ";
     }
@@ -479,7 +479,7 @@ class CRM_Printedgiro_Form_Search_PrintedGiro extends CRM_Contact_Form_Search_Cu
     $result = array();
     try {
       $optionValues = civicrm_api3('OptionValue', 'get', array(
-        'option_group_id' => 'maf_partners_frequency',
+        'option_group_id' => 'maf_printed_giro_frequency',
         'is_active' => 1,
         'options' => array('limit' => 0)
       ));

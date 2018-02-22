@@ -27,7 +27,7 @@ class CRM_Printedgiro_Config {
    * @throws Exception when error from API
    */
   public function __construct() {
-    $customGroupName = 'maf_partners_non_avtale';
+    $customGroupName = 'maf_printed_giro';
     try {
       $this->_printedCustomTableName = civicrm_api3('CustomGroup', 'getvalue', array(
         'name' => $customGroupName,
@@ -40,20 +40,20 @@ class CRM_Printedgiro_Config {
       ));
       foreach ($customFields['values'] as $customFieldId => $customField) {
         switch($customField['name']) {
-          case 'maf_partners_amount':
+          case 'maf_printed_giro_amount':
             $this->_amountCustomColumnName = $customField['column_name'];
             break;
-          case 'maf_partners_campaign':
+          case 'maf_printed_giro_campaign':
             $this->_campaignCustomColumnName = $customField['column_name'];
             break;
-          case 'maf_partners_end_date':
+          case 'maf_printed_giro_end_date':
             $this->_endDateCustomColumnName = $customField['column_name'];
             break;
-          case 'maf_partners_frequency':
+          case 'maf_printed_giro_frequency':
             $this->_frequencyCustomColumnName = $customField['column_name'];
             $this->_frequencyOptionGroupId = $customField['option_group_id'];
             break;
-          case 'maf_partners_start_date':
+          case 'maf_printed_giro_start_date':
             $this->_startDateCustomColumnName = $customField['column_name'];
             break;
         }

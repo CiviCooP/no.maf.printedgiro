@@ -159,7 +159,7 @@ class CRM_Printedgiro_Config {
   /**
    * Function to return singleton object
    *
-   * @return object $_singleton
+   * @return \CRM_Printedgiro_Config
    * @access public
    * @static
    */

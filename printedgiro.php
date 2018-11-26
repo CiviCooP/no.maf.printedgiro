@@ -2,6 +2,79 @@
 
 require_once 'printedgiro.civix.php';
 
+function printedgiro_civicrm_tokens(&$tokens) {
+  $tokens['printed_grio']['printed_grio.most_recent_amount'] = ts('Amount of most recent printed giro', array('context' => 'no.maf.printedgiro'));
+}
+
+
+function printedgiro_civicrm_tokenValues(&$values, $cids, $job = null, $tokens = array(), $context = null) {
+  if (_printedgiro_has_token('most_recent_amount', $tokens)) {
+    $config = CRM_Printedgiro_Config::singleton();
+    $contact_ids = $cids;
+    if (!is_array($contact_ids)) {
+      $contact_ids = [$contact_ids];
+    }
+    $tokenValues = [];
+    $sql = "
+      SELECT `printed_giro`.`{$config->getAmountCustomColumnName()}` AS `amount`, `printed_giro`.`entity_id` AS `contact_id` 
+      FROM `{$config->getPrintedCustomTableName()}`  `printed_giro`
+      WHERE `printed_giro`.`{$config->getStartDateCustomColumName()}` = 
+        (SELECT `most_recent_printed_giro`.`{$config->getStartDateCustomColumName()}`
+          FROM  `{$config->getPrintedCustomTableName()}` `most_recent_printed_giro`
+          WHERE `printed_giro`.`id` = `most_recent_printed_giro`.`id`
+          ORDER BY `most_recent_printed_giro`.`{$config->getStartDateCustomColumName()}` DESC 
+        )
+      AND  (`{$config->getEndDateCustomColumnName()}` IS NULL OR (`{$config->getEndDateCustomColumnName()}` >= NOW()))
+      AND `entity_id` IN (".implode(", ", $contact_ids).")";
+
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    while($dao->fetch()) {
+      $tokenValues[$dao->contact_id] = \CRM_Utils_Money::format($dao->amount);
+    }
+    _printedgiro_set_token_values($values, $cids, 'most_recent_amount', $tokenValues);
+  }
+}
+
+/**
+ * Helper function to set the array with the values
+ *
+ * @param $values
+ * @param $cids
+ * @param $token
+ * @param $tokenValues
+ */
+function _printedgiro_set_token_values(&$values, $cids, $token, $tokenValues) {
+  if (is_array($cids)) {
+    foreach ($cids as $cid) {
+      $values[$cid]['printed_grio.' . $token] = $tokenValues[$cid];
+    }
+  }
+  else {
+    $values['printed_grio.' . $token] = $tokenValues[$cids];
+  }
+}
+
+/**
+ * Chekcs whether the token is present in the current tokens array.
+ * @param $token
+ * @param $tokens
+ *
+ * @return bool
+ */
+function _printedgiro_has_token($token, $tokens) {
+  if (in_array($token, $tokens)) {
+    return true;
+  } elseif (isset($tokens[$token])) {
+    return true;
+  } elseif (isset($tokens['printed_grio']) && in_array($token, $tokens['printed_grio'])) {
+    return true;
+  } elseif (isset($tokens['printed_grio'][$token])) {
+    return true;
+  }
+  return FALSE;
+}
+
+
 /**
  * Implements hook_civicrm_searchTasks
  *
